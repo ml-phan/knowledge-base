@@ -82,7 +82,7 @@ def generate_document(DataFrame) -> dict {
 
 **Steps**
 1. Group dataset by ann_id
-2. The object inside the dataset includes document information where the annotations are made by the name of variables
+2. The objects inside the dataset includes document information where the annotations are made by the name of variables
 3. Save the documents to jsonl 
 
 
@@ -119,4 +119,67 @@ def generate_document3(DataFrame) -> dict {
 
 ### 6. Search in ElasticSearch
 
-----
+1. Initiate a client instance and call an API.  
+```{pseudocode}
+es = Elasticsearch("http://localhost:9200")
+es.info().body
+
+```
+
+2. Create an index for our document
+    1. Assigning field data type. This let the computer know which kind of data the field contians. [For more](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html)
+    2. Mapping
+    ```{pseudocode}
+    mappings = {
+      
+      "properties": {
+          "ann_id" : {"type": "text", "analyzer": "standard"}, 
+          "parent_doc_id" : {"type": "text", "analyzer": "standard"}, 
+          ...
+          -> assign all the objects in document for ingestion. 
+      }
+    }
+    ```
+3. Add data to the index created above. Then, load the data in bulk with the given index made above 'mapping' step.
+
+  ```{pseudocode}
+  bulk_data = []
+  for i,row in df3.iterrows():
+    bulk_data.append(
+        {
+            "_index": "hypothesis_v1",
+            "_id": row['ann_id'],
+            "_source": {
+                "parent_doc_id": row["parent_doc_id"],
+                "document_uri": row["document_uri"],
+                ... for all the other objects.             
+            }
+        }
+    )
+  bulk(es, bulk_data)
+
+
+  ```
+4. Search the data with ElasticSearch
+    1. Given annotation id, search the annotation. 
+  
+  ```{pseudocode}
+  resp = es.search(
+    index="hypothesis_v1",
+    body={
+        "query": {
+            "bool": {
+                "must": {
+                    "match_phrase": {
+                        "_id": "4011af8ea429e3c113c7328a721f6a2af2fd188f_L5lt6s5MEeqm_pesYHJVVQ",
+                    }
+                },
+                },
+        },            
+    }
+  )
+  resp
+  ```
+
+
+
