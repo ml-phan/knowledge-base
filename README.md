@@ -3,14 +3,14 @@
 ## Pipeline
 
 ### 0. [Optional] Fetch data from Hypothes.is and dump it into jsonl.
-### 1. Load data from hypothes.is file
+### 1. Load data from jsonl file.
 ### 2. Data Description
 Following observations were made
 1. Brief description of columns
-2. How many properties ("has:")
-3. How many 
-4. How many document types (found in tags is:...)
-4. 
+2. How many properties exist can be found in tags "has:..."
+3. How many document types exist is found in tags "is:..." 
+4. The total number of tags and each quantity of unique tags
+5. Field 'source' inside the 'target' column has identical values with 'uri' column. 
 
 ### 3. Data Curation
 The following changes were applied to consolidate and curate the data
@@ -22,22 +22,101 @@ elif text is in target (found within 'selector' as 'TextQuoteSelector') -> take 
 else text = ""
 ```
 
-2. There is no id to idenfify specific annotations
-3. 
+2. There is no id to idenfify specific annotations. After checking if column 'id' can be identifier, let the 'id' become the annotation id.
 
+```{pseudocode}
+if number of rows in data == number of unique values in 'id'; 
+  rename 'id' to 'ann_id'
+
+```
+3. Also, there is no identifier for document. We compare the number of unique values from 'uri' and 'document' column and found out that multiple uris direct to one document. Extract string value from 'document' and convert it to hexadecimal format which works as an id.
+
+```{pseudocode}
+func: extract_text_from_document
+func: generate_id
+
+data = data.apply(extract_text_from_document); 
+'doc_id' = data.apply(generate_id('document'));
+
+```
 ### 4. Data Structuring - Reference document
 
+This document structure is built for reference usage, not to use directly in elasticsearch. 
+
+**Steps**
+1. Group dataset by doc_id
+2. The top level of the document object comes from properties across rows (groupby) meaning that all the rows in that group have these same properties
+3. The object annotations contains all the info coming from individual rows within the group
+4. Save the document to jsonl.
+
+
+```{pseudocode}
+def generate_document(DataFrame) -> dict {
+
+  _id = 'doc_id',
+  document_uri = 'uri', 
+
+  ... for all the columns not included in the below objects;
+  
+    for index, row in df.iterrows(){
+
+          annotation = dict;
+          document['tags'] += row['tags'];
+          
+          annotation['text'] =  row['text_'];
+          annotation['tags'] = row['tags'];
+          annotation['ann_id'] = row['ann_id'];
+          annotation['target'] = row['target'];
+          annotation['links'] = row['links'];
+
+          document['annotations'] <- add(annotation)
+
+    }
+
+  return document;
+
+}
+
+```
 ### 5. Generation of documents to ingest
 
-### 6. 
+**Steps**
+1. Group dataset by ann_id
+2. The object inside the dataset includes document information where the annotations are made by the name of variables
+3. Save the documents to jsonl 
+
+
+```{pseudocode}
+def generate_document3(DataFrame) -> dict {
+
+  document = {
+        "ann_id": 'doc_id' + "_" + 'ann_id',
+        "parent_doc_id": 'doc_id',
+        "document_uri": 'uri',
+        "document": 'document',
+        "tags": 'tags', 
+        "created": 'created', 
+        "updated": 'updated', 
+        "user": 'user',
+        "text": 'text',
+        "group": 'group', 
+        "permissions": 'permissions', 
+        "target": 'target', 
+        "links": 'links', 
+        "user_info": 'user_info', 
+        "flagged": 'flagged', 
+        "hidden": 'hidden', 
+        
+    }
+    
+    return document;
+
+}
+
+```
+
+
+
+### 6. Search in ElasticSearch
 
 ----
-
-### TODO
-
-- [ ] Complete Readme as documentation so that someone can understand the overall process without reading the Jupyter Notebook.
-- [ ] From Jupyter Notebook to python module: pipeline.py + all needed functions in modules.
-- [ ] Think & write "top 5 obvious" queries for elastic search. Examples:
-  - Q1: search "term" in "text" field.
-  - Q2: search all documents with tag "X"
-  - Q3: 
