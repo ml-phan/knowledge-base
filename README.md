@@ -181,5 +181,27 @@ es.info().body
   resp
   ```
 
+### TODO list
 
+- [x] Complete Readme as documentation so that someone can understand the overall process without reading the Jupyter Notebook.
+- [ ] From Jupyter Notebook to python module: pipeline.py + all needed functions in modules.
+- [x] Think & write "top 5 obvious" queries for elastic search. Examples:
+  - Q1: search "term" in "text" field.
+    - Q1.1: Compound search AND / OR for multiple text fields.
+  - Q2: search all documents with tag "X" in the list tags.
+  - Q3: get all documents in date range.
+  - Q4: get documents by type - we need to offer a list of types ("is:...")
+
+- [ ] Complete the search_documents function and provide 5 test cases combining different options.
+
+---
+- [ ] Options to parse natural language queries into our queries.
+- [ ] Can we fetch the tweets??
+- [ ] Can we fetch some info about the websites / videos??
+
+#### Corrections
+
+- Dates are sometimes not cleean enough - "2020-05\n"
+- "is:twitter" and "is:tweet" should be merged
+- "has:date" and "has date" should me merged
 
