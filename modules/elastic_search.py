@@ -1,104 +1,99 @@
-from typing import List
+import data_processing
+import data_structure
+from modules.queries import search_documents
+import queries
 import pandas as pd
+from elastic_search import Elasticsearch
+from elasticsearch.helpers import bulk
 
-# Definining subqueries
-query_text = {
-    "match": {
-        "text": "string"
-    }
-}
-# Is it 'match' or 'match_phrase' or something else?
+# [optional] If you don't have the data already, then run the following code as well. 
+# import data_creation
 
-query_date_range = {
+
+# Initiate a client instance and call an API 
+es = Elasticsearch("http://localhost:9200")
+es.info().body
+
+# load data from file
+df3 = (
+    pd.read_json('hypothesis_documents_v2.jsonl', orient='records', lines=True)
+    .dropna()
+    .sample(5000, random_state=42)
+    .reset_index()
+)
+df3 = df3.drop(['index'], axis = 1) # Unnecessary column, index dropping.
+
+# initiate a client instance and call an API. 
+# queries.py does the job.
+
+# create index to use in Elasticsearch 
+
+mappings = {
     
-    "range": {
+    "properties": {
+        "ann_id" : {"type": "text", "analyzer": "standard"}, 
+        "parent_doc_id" : {"type": "text", "analyzer": "standard"}, 
+        "document_uri" : {"type": "text", "analyzer": "standard"}, 
+        "document" : {"type": "text", "analyzer": "standard"}, 
+        "tags": {"type": "keyword"},
+        "created" : {"type": "date"}, 
+        "updated": {"type": "date"}, 
+        "user": {"type": "text", "analyzer": "standard"}, 
+        "text" : {"type": "text", "analyzer": "standard"}, 
+        "group": {"type": "text", "analyzer": "standard"}, 
+        "permissions": {"type": "nested"}, 
+        "target": {"type": "nested"}, 
+        "links": {"type": "nested"}, 
+        "user_info": {"type": "object"}, 
+        "flagged": {"type": "text", "analyzer": "standard"}, 
+        "hidden": {"type": "text", "analyzer": "standard"}
         
-        "text": {    
-            "gte": "begin_date", 
-            "lte": "end_date"
-        }
-    }
     
-}
-# Is it 'text' or something else? 
-
-query_type = {
-    "terms": {
-        "tags": "<LIST_TYPE>"
     }
 }
 
-query_ann_type = {   
-    "terms" : {
-        "tags": "<LIST_ANN_TYPES>"
-    }
-}
+es.indices.create(index= "hypothesis_v1", mappings = mappings) # actual creation of the index here.
 
-query_has_property = {
-    "terms": {
-        "tags": "<LIST_PROPERTY>"
-    }
-}
+#  add data to the index created above
 
-
-query_keywords = {
-    "terms": {
-        "tags": "TERM_TAGS"
-    }
-}
-
-
-def search_documents(text: str = None , date_range: List[str] = None , type_: str = None, ann_type = None, has_property: str = None,
-                     keywords: List[str] = None) -> list:
-    """
-    Building a query for elastic search consisting of six subqueries, depending on what's provided
-
-    :param text: free text to be search in the fields 'text' or 'document'
-    :param date_range: a list with two values [begin_date, end_date]. When provided, we need to filter documents that have date and whose date is in the range
-    :param type_: relates to documents which have a tag "is:<TYPE>", where "<TYPE>" is the type provided
-    :param ann_type: relates to documents which have a tag "ann:<ANN_TYPE>", where "<ANN_TYPE>" is the ann_type provided
-    :param has_property: relates to documents which have a tag "has:<HAS_PROPERTY>", where "<HAS_PROPERTY>" is the has_property provided
-    :param keywords: list of terms expected to be found in the "tags" field ONLY and they appear without any specification (not "is:", "has:, "ann:")
-    :return: a list of results with all relevant documents for that query
-    """
-    
-    query = {
-        "query": {
-            "bool": {
-                "must": []
+bulk_data = []
+for i,row in df3.iterrows():
+    bulk_data.append(
+        {
+            "_index": "hypothesis_v1",
+            "_id": row['ann_id'],
+            "_source": {
+                "parent_doc_id": row["parent_doc_id"],
+                "document_uri": row["document_uri"],
+                "document": row["document"], 
+                "tags": row["tags"], 
+                "created": row["created"], 
+                "updated": row["updated"], 
+                "user": row["user"], 
+                "text": row["text"], 
+                "group": row["group"], 
+                "permissions": row["permissions"], 
+                "target": row["target"], 
+                "links": row["links"], 
+                "user_info": row["user_info"], 
+                "flagged": row["flagged"], 
+                "hidden": row["hidden"]               
+                
             }
         }
-    }
+    )
 
-    if text:
-        query_text['match']['text'] = text
-        query['query']['bool']['must'].append(query_text)
+es.indices.refresh(index="hypothesis_v1")
 
-    if date_range:
-        query_date_range['range']['text']['gte'] = date_range[0]
-        query_date_range['range']['text']['lte'] = date_range[1]
-        query['query']['bool']['must'].append(query_date_range) #'query' - 'range' should be? or is it okay?    
 
-        
-    if type_:
-        query_type['terms']['tags'] = ["is:"+ type_]
-        query['query']['bool']['must'].append(query_type)
-        
-    if ann_type: 
-        query_ann_type['terms']['tags'] = ["ann:"+ann_type]
-        query['query']['bool']['must'].append(query_ann_type)
-    
-    if has_property: 
-        query_has_property['terms']['tags'] = ["has:"+has_property]
-        query['query']['bool']['must'].append(query_has_property)
-    
-    if keywords: 
-        query_keywords['terms']['tags'] = keywords
-        query['query']['bool']['must'].append(query_keywords)
-    
+# Search query
+search_documents(type_= "twitter", keywords = "COVID-19")
+search_documents(text="BBC News", has_property="context")
+search_documents(date_range = ["2011-01-06", "2023-04-19"])
+search_documents(type_ = "news")
+search_documents(text = "BBC News", date_range = ['2021-01-01', '2023-04-01'], type_ = "news", has_property = "context", keywords = "COVID-19")
 
-    res = es.search(index="hypothesis_v1", body={"query": query['query']})
-    for doc in res['hits']['hits']:
-        print("%s) %s" % (doc['_source']['user'], doc['_source']['document']))
 
-    return res['hits']['hits']
+
+
+
