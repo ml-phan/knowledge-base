@@ -7,8 +7,8 @@ print(df)
 # #load the data from file
 # df = pd.read_json('hypothesis_v1__12-03-22.jsonl', orient='records', lines=True)
 
-# # Give the id column the name ann_id.
-# df = df.rename(columns={'id': 'ann_id'})
+# Give the id column the name ann_id.
+df = df.rename(columns={'id': 'ann_id'})
 
 # DOCUMENT - Reference usage
 # define a function to generate the document format 
@@ -18,7 +18,6 @@ def generate_document(df: pd.DataFrame) -> dict:
     :param df: This dataframe is actually a "grouped-by" dataframe, meaning that doc_id, uri, document and tags are the same for all rows
     :return:
     """
-    
     assert len(df['doc_id'].unique()) == 1
     assert len(df['document'].unique()) == 1
 
@@ -54,7 +53,13 @@ def generate_document(df: pd.DataFrame) -> dict:
 
     return document
 
-documents = generate_document(df)
+# Generate documents format from dataframe. 
+documents = []
+
+for doc_id in df['doc_id'].unique():
+    sub_df = df.query("doc_id == @doc_id")
+    documents.append(generate_document(sub_df))
+
 
 
 # ATTENTION! This block of codes will overwrite existing file if it already does.
