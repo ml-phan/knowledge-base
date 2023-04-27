@@ -12,7 +12,10 @@ es.info().body
 # Definining subqueries
 query_text = {
     "match": {
-        "text": "string"
+        "text": {
+            "query": "input_text", 
+            "operator": "and"
+        } 
     }
 }
 # Is it 'match' or 'match_phrase' or something else?
@@ -20,9 +23,8 @@ query_text = {
 query_date_range = {
     
     "range": {
-        
-        "text": {    
-            "gte": "begin_date", 
+        "date": {    
+            "gte": "begin_date",
             "lte": "end_date"
         }
     }
@@ -31,29 +33,20 @@ query_date_range = {
 # Is it 'text' or something else? 
 
 query_type = {
-    "terms": {
-        "tags": "<LIST_TYPE>"
-    }
+    "term" : { "tags" : "TYPE" }
 }
 
 query_ann_type = {   
-    "terms" : {
-        "tags": "<LIST_ANN_TYPES>"
-    }
+    "term" : { "tags" : "ANN_TYPE" }
 }
 
 query_has_property = {
-    "terms": {
-        "tags": "<LIST_PROPERTY>"
-    }
+    "term" : { "tags" : "HAS_PROPERTY" }
 }
 
+#temp_keywords = ["str1", "str2", "str3"]
+# query_keywords = [{"term": {"tags": keyword}} for keyword in temp_keywords] -> it is already inside the function search_documents
 
-query_keywords = {
-    "terms": {
-        "tags": "TERM_TAGS"
-    }
-}
 
 def search_documents(text: str = None , date_range: List[str] = None , type_: str = None, ann_type = None, has_property: str = None,
                      keywords: List[str] = None) -> list:
@@ -72,41 +65,56 @@ def search_documents(text: str = None , date_range: List[str] = None , type_: st
     query = {
         "query": {
             "bool": {
+                "filter": [], 
                 "must": []
             }
         }
     }
 
     if text:
-        query_text['match']['text'] = text
-        query['query']['bool']['must'].append(query_text)
+        query_text['match']['text']['query'] = text
+        query['query']['bool']['filter'].append(query_text)
 
+        
     if date_range:
-        query_date_range['range']['text']['gte'] = date_range[0]
-        query_date_range['range']['text']['lte'] = date_range[1]
-        query['query']['bool']['must'].append(query_date_range) #'query' - 'range' should be? or is it okay?    
-
+        
+        if len(date_range) > 1:
+            query_date_range['range']['date']['gte'] = date_range[0]
+            query_date_range['range']['date']['lte'] = date_range[1]
+            query['query']['bool']['filter'].append(query_date_range)
+            
+        elif len(date_range) == 1: 
+            query_date_range['range']['date']['gte'] = date_range[0] # only one date -> putting it to a starting date.
+            query_date_range['range']['date']['lte'] = '3000-01-01'
+            query['query']['bool']['filter'].append(query_date_range)
+            
+            print(query)
+            
+        else: 
+            pass
+    
         
     if type_:
-        query_type['terms']['tags'] = ["is:"+ type_]
-        query['query']['bool']['must'].append(query_type)
+        query_type['term']['tags'] = "is:"+ type_
+        query['query']['bool']['filter'].append(query_type)
         
     if ann_type: 
-        query_ann_type['terms']['tags'] = ["ann:"+ann_type]
-        query['query']['bool']['must'].append(query_ann_type)
+        query_ann_type['term']['tags'] = "ann:"+ann_type
+        query['query']['bool']['filter'].append(query_ann_type)
     
     if has_property: 
-        query_has_property['terms']['tags'] = ["has:"+has_property]
-        query['query']['bool']['must'].append(query_has_property)
-    
+        query_has_property['term']['tags'] = "has:"+has_property
+        query['query']['bool']['filter'].append(query_has_property)
+        
     if keywords: 
-        query_keywords['terms']['tags'] = keywords
-        query['query']['bool']['must'].append(query_keywords)
+        temp_keywords = keywords
+        query_keywords = [{"term": {"tags": keyword}} for keyword in temp_keywords]
+        query['query']['bool']['must'].extend(query_keywords)
     
-
-    res = es.search(index="hypothesis_v1", body={"query": query['query']})
+    res = es.search(index="hypothesis_v1", query = query['query'])
+    
     for doc in res['hits']['hits']:
-        print("%s) %s" % (doc['_source']['user'], doc['_source']['document']))
+         print("%s) %s" % (doc['_source']['user'], doc['_source']['document']))
+    
 
     return res['hits']['hits']
-
