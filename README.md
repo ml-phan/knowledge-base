@@ -118,13 +118,24 @@ def generate_document3(DataFrame) -> dict {
 
 
 ### 6. Search in ElasticSearch
+  1. Run the docker in local environment
+  2. Create the virtual environment - terminal command
+  ```{pseudocode}
+  python3 -m venv .venv
+  source .venv/bin/activate
+  ```
+  3. Run the Elasticsearch on docker - terminal command 
+  ```{pseudocode}
+  docker run --rm -p 9200:9200 -p 9300:9300 -e "xpack.security.enabled=false" -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+  ```
 
-1. Initiate a client instance and call an API.  
-```{pseudocode}
-es = Elasticsearch("http://localhost:9200")
-es.info().body
+  . Initiate a client instance and call an API.  
+  ```{pseudocode}
+  es = Elasticsearch("http://localhost:9200")
+  es.info().body
+  ```
 
-```
+
 
 2. Create an index for our document
     1. Assigning field data type. This let the computer know which kind of data the field contians. [For more](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html)
