@@ -179,22 +179,18 @@ def generate_document3(DataFrame) -> dict {
   '''{pseudocode} 
   search_documents(text = 'Search')
   ```
-
   2.  Search document which contains 'X' tag. 
   '''{pseudocode} 
   search_documents(keywords = ['COVID-19'])
   ```
-
   3. Search document with a given date range
   '''{pseudocode} 
   search_documents(date_range = ['2020', '2021'])
   ```
-
   4. Search document by 'type'
   '''{pseudocode} 
   search_documents(type_ = 'twitter'])
   ```
-
   5. Search document if they contains all the tags input 
   ```{pseudocode}
   search_documents(keywords = ['COVID-19', 'pandemic', 'testing', 'tracking'])
