@@ -1,6 +1,7 @@
 import hashlib
 import pandas as pd
-#import data_creation
+#import data_creation - if you want to create a new datafile and use it, then use this. 
+# df = data_creation.total_anns_df
 
 #load the data from file
 df = pd.read_json('hypothesis_v1__12-03-22.jsonl', orient='records', lines=True)
