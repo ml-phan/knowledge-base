@@ -174,25 +174,33 @@ def generate_document3(DataFrame) -> dict {
 
   ```
 4. Search the data with ElasticSearch
-    1. Given annotation id, search the annotation. 
-  
-  ```{pseudocode}
-  resp = es.search(
-    index="hypothesis_v1",
-    body={
-        "query": {
-            "bool": {
-                "must": {
-                    "match_phrase": {
-                        "_id": "4011af8ea429e3c113c7328a721f6a2af2fd188f_L5lt6s5MEeqm_pesYHJVVQ",
-                    }
-                },
-                },
-        },            
-    }
-  )
-  resp
+
+  1. Search 'term' in 'text' field
+  '''{pseudocode} 
+  search_documents(text = 'Search')
   ```
+
+  2.  Search document which contains 'X' tag. 
+  '''{pseudocode} 
+  search_documents(keywords = ['COVID-19'])
+  ```
+
+  3. Search document with a given date range
+  '''{pseudocode} 
+  search_documents(date_range = ['2020', '2021'])
+  ```
+
+  4. Search document by 'type'
+  '''{pseudocode} 
+  search_documents(type_ = 'twitter'])
+  ```
+
+  5. Search document if they contains all the tags input 
+  ```{pseudocode}
+  search_documents(keywords = ['COVID-19', 'pandemic', 'testing', 'tracking'])
+  ```
+
+
 
 ### TODO list
 
