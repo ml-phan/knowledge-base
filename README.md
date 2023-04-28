@@ -119,12 +119,25 @@ def generate_document3(DataFrame) -> dict {
 
 ### 6. Search in ElasticSearch
 
-1. Initiate a client instance and call an API.  
-```{pseudocode}
-es = Elasticsearch("http://localhost:9200")
-es.info().body
+0. Pre-step
+    1. Run the docker in local environment
+    2. Create the virtual environment - terminal command
+    ```{pseudocode}
+    python3 -m venv .venv
+    source .venv/bin/activate
+    ```
+    3. Run the Elasticsearch on docker - terminal command 
+    ```{pseudocode}
+    docker run --rm -p 9200:9200 -p 9300:9300 -e "xpack.security.enabled=false" -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:8.3.3
+    ```
 
-```
+1. Initiate a client instance and call an API.  
+  ```{pseudocode}
+  es = Elasticsearch("http://localhost:9200")
+  es.info().body
+  ```
+
+
 
 2. Create an index for our document
     1. Assigning field data type. This let the computer know which kind of data the field contians. [For more](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-types.html)
@@ -161,25 +174,29 @@ es.info().body
 
   ```
 4. Search the data with ElasticSearch
-    1. Given annotation id, search the annotation. 
-  
-  ```{pseudocode}
-  resp = es.search(
-    index="hypothesis_v1",
-    body={
-        "query": {
-            "bool": {
-                "must": {
-                    "match_phrase": {
-                        "_id": "4011af8ea429e3c113c7328a721f6a2af2fd188f_L5lt6s5MEeqm_pesYHJVVQ",
-                    }
-                },
-                },
-        },            
-    }
-  )
-  resp
+
+  1. Search 'term' in 'text' field
+  '''{pseudocode} 
+  search_documents(text = 'Search')
   ```
+  2.  Search document which contains 'X' tag. 
+  '''{pseudocode} 
+  search_documents(keywords = ['COVID-19'])
+  ```
+  3. Search document with a given date range
+  '''{pseudocode} 
+  search_documents(date_range = ['2020', '2021'])
+  ```
+  4. Search document by 'type'
+  '''{pseudocode} 
+  search_documents(type_ = 'twitter'])
+  ```
+  5. Search document if they contains all the tags input 
+  ```{pseudocode}
+  search_documents(keywords = ['COVID-19', 'pandemic', 'testing', 'tracking'])
+  ```
+
+
 
 ### TODO list
 
