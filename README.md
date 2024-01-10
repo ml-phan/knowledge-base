@@ -6,7 +6,7 @@ Compiled from main_pipeline notebook.
 Run main.py to start the application
 ### Functionality
 ##### 1. Search database
-  - Start an ElasticSearch docker
+  - Start an ElasticSearch docker if one is not running
   - Ingest the most recent local database under `index_name:` *hypothesis_v1*
   - Search id
   - Search by tags
