@@ -1,10 +1,13 @@
 # Knowledge Base
 
 ## Python app
+Compiled from main_pipeline notebook. 
+
 Run main.py to start the application
 ### Functionality
 ##### 1. Search database
-  - Start an ElasticSearch docker and create an index for searching
+  - Start an ElasticSearch docker
+  - Ingest the most recent local database under `index_name:` *hypothesis_v1*
   - Search id
   - Search by tags
   - Search document function (not yet implemented)
@@ -12,6 +15,8 @@ Run main.py to start the application
   - Return the most recent local database 
 ##### 3. Update database
   - Fetch new database (if database's size changes, or forcefully)
+  - Database is saved to `hypothesis_database_{timestamps}.pickle`
+  - Cleaned up database for ingestion is saved to `hypothesis_document_{timestamps}.pickle`
 
 
 ## Pipeline
