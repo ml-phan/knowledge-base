@@ -1,5 +1,19 @@
 # Knowledge Base
 
+## Python app
+Run main.py to start the application
+### Functionality
+##### 1. Search database
+  - Start an ElasticSearch docker and create an index for searching
+  - Search id
+  - Search by tags
+  - Search document function (not yet implemented)
+##### 2. Review database
+  - Return the most recent local database 
+##### 3. Update database
+  - Fetch new database (if database's size changes, or forcefully)
+
+
 ## Pipeline
 
 ### 0. [Optional] Fetch data from Hypothes.is and dump it into jsonl.
