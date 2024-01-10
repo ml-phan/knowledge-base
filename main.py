@@ -1,4 +1,3 @@
-import datetime
 import sys
 
 from modules.data_pipeline import *
@@ -8,10 +7,11 @@ from modules.search import *
 
 
 def main():
-    if len(list(Path(r"data").glob("*database_es*.pickle"))) == 0:
+    if len(list(Path(r"./data").glob("*database_es*.pickle"))) == 0:
+        Path(r"./data").mkdir(parents=True, exist_ok=True)
         print("No database detected. Fetching data from Hypothes.is...")
         data_pipeline()
-    database_file = list(Path(r"data").glob("*document_es*.pickle"))[-1]
+    database_file = list(Path(r"./data").glob("*document_es*.pickle"))[-1]
     creation_time = datetime.datetime. \
         fromtimestamp(database_file.stat().st_ctime). \
         isoformat(sep=" ", timespec="seconds")

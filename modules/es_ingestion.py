@@ -39,8 +39,6 @@ def es_ingestion(dataframe, index_name='hypothesis_v1'):
                 elastic_search.indices.create(index=index_name,
                                               mappings=mappings)
                 elastic_search.indices.refresh(index=index_name)
-            print("What",
-                  elastic_search.cat.count(index=index_name, format="json"))
             break
         except ConnectionError:
             print(f"\rWaiting for ElasticSearch to be ready... {wait_time}s",
