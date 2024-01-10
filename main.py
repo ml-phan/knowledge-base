@@ -11,7 +11,7 @@ def main():
     if len(list(Path(r"data").glob("*database_es*.pickle"))) == 0:
         print("No database detected. Fetching data from Hypothes.is...")
         data_pipeline()
-    database_file = list(Path(r"data").glob("*database_es*.pickle"))[-1]
+    database_file = list(Path(r"data").glob("*document_es*.pickle"))[-1]
     creation_time = datetime.datetime. \
         fromtimestamp(database_file.stat().st_ctime). \
         isoformat(sep=" ", timespec="seconds")
@@ -59,3 +59,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # check_database_update()

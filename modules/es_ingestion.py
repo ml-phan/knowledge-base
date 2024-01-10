@@ -43,7 +43,7 @@ def es_ingestion(dataframe, index_name='hypothesis_v1'):
                   elastic_search.cat.count(index=index_name, format="json"))
             break
         except ConnectionError:
-            print(f"\rWaiting for ElasticSearch... {wait_time}s",
+            print(f"\rWaiting for ElasticSearch to be ready... {wait_time}s",
                   end="")
             time.sleep(1)
         wait_time += 1

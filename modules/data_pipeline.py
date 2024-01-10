@@ -70,7 +70,7 @@ def check_database_update():
                                'Authorization': f"Bearer {API_KEY}"})
         if res.json()["total"] > 0:
             user_annots[user_id] = res.json()["total"]
-    df = pd.read_pickle(list(Path(r"../data/").glob("*hypo*"))[-1])
+    df = pd.read_pickle(list(Path(r"./data/").glob("*database_20*"))[-1])
     if sum(user_annots.values()) == len(df):
         print(
             f"The database size doesn't seem to have changed ({len(df)} entries).")
@@ -346,7 +346,7 @@ def data_pipeline():
     print(f"Saved latest database to {database_file}")
     database = data_cleaning(database)
     database_es = create_and_save_document_es(database)
-    database_es_file = f"./data/hypothesis_database_es_{now}.pickle"
+    database_es_file = f"./data/hypothesis_document_es_{now}.pickle"
     print(f"Saved cleaned database to {database_es_file}")
     database_es.to_pickle(database_es_file)
 
