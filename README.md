@@ -16,7 +16,7 @@ Run main.py to start the application
 ##### 3. Update database
   - Fetch new database (if database's size changes, or forcefully)
   - Database is saved to `hypothesis_database_{timestamps}.pickle`
-  - Cleaned up database for ingestion is saved to `hypothesis_document_{timestamps}.pickle`
+  - Cleaned up database for ingestion is saved to `hypothesis_document_es_{timestamps}.pickle`
 
 
 ## Pipeline
