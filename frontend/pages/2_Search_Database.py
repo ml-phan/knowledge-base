@@ -26,6 +26,9 @@ def main(elastic_search):
         st.write(response)
         print(response)
 
+    # Example:
+    response = requests.get('http://localhost:8000/search')
+
 
 if __name__ == '__main__':
     if not st.session_state.docker_ready:
