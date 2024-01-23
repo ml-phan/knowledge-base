@@ -3,12 +3,15 @@ import streamlit as st
 st.write("This page is for testing stuffs")
 
 
-def proc():
-    st.file_uploader('')
-
-
 if __name__ == '__main__':
-    option = st.selectbox(
-        'Which folder would you like to upload to?',
-        ('1 docx-raw', '2 docx-text-only'), on_change=proc)
-    st.write('You selected:', option)
+    random_number = st.text_input("Random number", key="rn")
+
+    if st.button("What is in the field?"):
+        st.write(random_number == "")
+    col1, col2 = st.columns([80, 20])
+    with col1:
+        st.text_input("This is column 1.")
+    with col2:
+        st.text_input("This is column 2.")
+    text = "is:preprint"
+    st.text(text)

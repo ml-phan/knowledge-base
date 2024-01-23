@@ -1,11 +1,16 @@
+import pandas as pd
+
+
 def search_documents(es, text: str = None, date_range: list[str] = None,
                      type_: str = None, ann_type=None,
                      has_property: str = None,
-                     keywords: list[str] = None) -> list:
+                     keywords: list[str] = None,
+                     query_size=20) -> list:
     """
     Building a query for elastic search consisting of six sub queries,
     depending on what's provided
 
+    :param query_size: the number of results to be returned
     :param es: the ElasticSearch instance to be used for searching
     :param text: free text to be search in the fields 'text' or 'document'
     :param date_range: a list with two values [begin_date, end_date].
@@ -23,6 +28,8 @@ def search_documents(es, text: str = None, date_range: list[str] = None,
     """
 
     query = {
+        "from": 0,
+        "size": query_size,
         "query": {
             "bool": {
                 "filter": [],
@@ -103,12 +110,12 @@ def search_documents(es, text: str = None, date_range: list[str] = None,
         query['query']['bool']['must'].extend(query_keywords)
 
     index_name = get_es_index_name(es)
-    res = es.search(index=index_name, query=query['query'])
+    res = es.search(index=index_name, query=query['query'], size=query_size)
 
     for doc in res['hits']['hits']:
         print("%s) %s" % (doc['_source']['user'], doc['_source']['document']))
 
-    return res['hits']['hits']
+    return res
 
 
 def search_id(es, ann_id):
@@ -116,6 +123,8 @@ def search_id(es, ann_id):
     resp = es.search(
         index=index_name,
         body={
+            "from": 0,
+            "size": 20,
             "query": {
                 "bool": {
                     "filter": {
@@ -137,3 +146,26 @@ def search_tag(es, tags: list):
 
 def get_es_index_name(es):
     return [index["index"] for index in es.cat.indices(format="json")][0]
+
+
+def result_format(response):
+    doc_list = []
+    text_list = []
+    uri_list = []
+    tags_list = []
+    date_list = []
+    for item in response["hits"]["hits"]:
+        doc_list.append(item["_source"]["document"])
+        text_list.append(item["_source"]["text"])
+        uri_list.append(item["_source"]["document_uri"])
+        tags_list.append(item["_source"]["tags"])
+        date_list.append(item["_source"]["date"])
+    resp_df = pd.DataFrame({"Document": doc_list,
+                            "Text": text_list,
+                            "Tags": tags_list,
+                            "URI": uri_list,
+                            "Date": date_list
+                            },
+                           index=range(1, len(doc_list) + 1)
+                           )
+    return resp_df

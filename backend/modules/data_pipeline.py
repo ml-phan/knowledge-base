@@ -1,15 +1,11 @@
 import datetime
 import hashlib
-import json
-import pickle
 import time
 from pathlib import Path
 
 import pandas as pd
 import requests
-from elasticsearch import Elasticsearch
-
-from modules.search import search_id
+from fastapi.responses import JSONResponse
 
 URL_SEARCH = r"https://api.hypothes.is/api/search"
 GROUP = "Jk8bYJdN"
@@ -18,7 +14,7 @@ API_KEY = "my_api_key"
 
 def fetch_all_data() -> pd.DataFrame:
     """
-    Fetch all data from our group via Hypothe.is API.
+    Fetch all data from our group via Hypothes.is API.
     Concatenate all entries into a single Pandas Dataframe
     :return: pd.Dataframe
     """
@@ -49,6 +45,15 @@ def fetch_all_data() -> pd.DataFrame:
     dataframe = pd.DataFrame(database)
 
     return dataframe
+
+
+def database_exists():
+    if len(list(Path(r'../data').glob('*document_es*.pickle'))) != 0:
+        database_file = list(Path(r"../data").glob("*document_es*.pickle"))[-1]
+        json_data = pd.read_pickle(database_file).to_json(orient="records")
+        return JSONResponse(content=json_data)
+    else:
+        return None
 
 
 def check_database_update():
@@ -341,12 +346,12 @@ def data_pipeline():
     database = fetch_all_data()
     # Save the fetched database to pickle file
     now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    database_file = f"./data/hypothesis_database_{now}.pickle"
+    database_file = f"../data/hypothesis_database_{now}.pickle"
     database.to_pickle(database_file)
     print(f"Saved latest database to {database_file}")
     database = data_cleaning(database)
     database_es = create_and_save_document_es(database)
-    database_es_file = f"./data/hypothesis_document_es_{now}.pickle"
+    database_es_file = f"../data/hypothesis_document_es_{now}.pickle"
     print(f"Saved cleaned database to {database_es_file}")
     database_es.to_pickle(database_es_file)
 

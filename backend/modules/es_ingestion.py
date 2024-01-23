@@ -1,6 +1,6 @@
 import time
 from elasticsearch.exceptions import ConnectionError
-from modules.docker_manager import *
+from .docker_manager import *
 
 
 def es_ingestion(dataframe, index_name='hypothesis_v1'):
