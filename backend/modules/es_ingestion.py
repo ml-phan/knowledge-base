@@ -12,7 +12,7 @@ def es_ingestion(dataframe, index_name='hypothesis_v1'):
             "ann_id": {"type": "keyword"},
             "parent_doc_id": {"type": "keyword"},
             "document_uri": {"type": "keyword"},
-            "document": {"type": "keyword"},
+            "document": {"type": "text", "analyzer": "standard"},
             "tags": {"type": "keyword"},
             "created": {"type": "date"},
             "updated": {"type": "date"},
@@ -80,3 +80,4 @@ def es_ingestion(dataframe, index_name='hypothesis_v1'):
 
 def get_es_index(es):
     return es.indices.get_alias().keys()
+

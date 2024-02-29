@@ -1,3 +1,6 @@
+import os
+import subprocess
+
 import requests
 import streamlit as st
 
@@ -31,6 +34,18 @@ def main():
 
     if st.session_state.docker_ready:
         st.write("Docker is running.")
+
+    if st.button("Check Docker Status"):
+        url = f"http://localhost:8000/docker_ready"
+        response = requests.get(url, verify=False)
+        if response.json():
+            st.write("ES docker is running")
+        else:
+            st.write("ES docker is not running")
+
+    if st.button("Start Docker Container"):
+        url = f"http://localhost:8000/start_es_docker"
+        _ = requests.get(url, verify=False)
 
 
 if __name__ == '__main__':

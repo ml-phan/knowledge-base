@@ -1,4 +1,5 @@
 import pandas as pd
+from elasticsearch import Elasticsearch
 
 
 def search_documents(es, text: str = None, date_range: list[str] = None,
@@ -111,7 +112,7 @@ def search_documents(es, text: str = None, date_range: list[str] = None,
 
     index_name = get_es_index_name(es)
     res = es.search(index=index_name, query=query['query'], size=query_size)
-
+    print(query)
     for doc in res['hits']['hits']:
         print("%s) %s" % (doc['_source']['user'], doc['_source']['document']))
 
@@ -137,6 +138,89 @@ def search_id(es, ann_id):
         }
     )
     return resp
+
+
+def search_term(es, term, result_size):
+    query = {
+        "size": result_size,
+        "query": {
+            "bool": {
+                "should": [
+                    {
+                        "match": {
+                            "document": {"query": term,
+                                         "operator": "and"
+                                         }
+                        }
+                    },
+                    {
+                        "match": {
+                            "text": {"query": term,
+                                     "operator": "and"
+                                     }
+                        }
+                    }
+                ],
+                "minimum_should_match": 1
+            }
+        }
+    }
+    index_name = get_es_index_name(es)
+    return es.search(index=index_name, body=query)
+
+
+def search_combine(es, tags, terms, start, num):
+    # Initialize the base query structure
+    query = {
+        "from": start,
+        "size": num,
+        "query": {
+            "bool": {
+                "must": []
+            }
+        }
+    }
+
+    # Handling tags - all tags must match
+    if tags:
+        for tag in tags.split(" "):
+            query["query"]["bool"]["must"].append({
+                "match": {
+                    "tags": tag
+                }
+            })
+
+    # Handling terms - all terms must match across specified fields
+    if terms:
+        for term in terms.split(" "):
+            # Each term must match in either the document or text fields
+            term_condition = {
+                "bool": {
+                    "should": [],
+                    "minimum_should_match": 1
+                }
+            }
+            term_condition["bool"]["should"].append({
+                "match": {
+                    "document": {
+                        "query": term,
+                        "operator": "and"
+                    }
+                }
+            })
+            term_condition["bool"]["should"].append({
+                "match": {
+                    "text": {
+                        "query": term,
+                        "operator": "and"
+                    }
+                }
+            })
+            # Add the condition for the current term
+            query["query"]["bool"]["must"].append(term_condition)
+
+    index_name = get_es_index_name(es)
+    return es.search(index=index_name, body=query)
 
 
 def search_tag(es, tags: list):
@@ -166,6 +250,6 @@ def result_format(response):
                             "URI": uri_list,
                             "Date": date_list
                             },
-                           index=range(1, len(doc_list) + 1)
+                           index=range(0, len(doc_list))
                            )
     return resp_df

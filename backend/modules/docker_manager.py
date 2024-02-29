@@ -66,3 +66,8 @@ def get_all_docker() -> list:
         containers_info.append(container_info)
 
     return containers_info
+
+
+if __name__ == '__main__':
+    print(is_docker_container_running("es_search"))
+    start_es_docker("es_search")

@@ -1,11 +1,12 @@
 import datetime
 import hashlib
 import time
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
 import requests
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 URL_SEARCH = r"https://api.hypothes.is/api/search"
 GROUP = "Jk8bYJdN"
@@ -48,14 +49,38 @@ def fetch_all_data() -> pd.DataFrame:
 
 
 def database_exists():
-    if len(list(Path(r'../data').glob('*document_es*.pickle'))) != 0:
-        database_file = list(Path(r"../data").glob("*document_es*.pickle"))[-1]
+    if len(list(find_data_folder().glob('*document_es*.pickle'))) != 0:
+        database_file = list(find_data_folder().glob("*document_es*.pickle"))[
+            -1]
         json_data = pd.read_pickle(database_file).to_json(orient="records")
         return JSONResponse(content=json_data)
     else:
         return None
 
 
+# def database_exists():
+#     if len(list(find_data_folder().glob('*document_es*.pickle'))) != 0:
+#         database_file = list(find_data_folder().glob("*document_es*.pickle"))[
+#                     -1]
+#         df = pd.read_pickle(database_file)
+#         buffer = BytesIO()
+#
+#         # Save the DataFrame to the buffer in Parquet format
+#         df.to_parquet(buffer, index=False)
+#         # Seek to the start of the BytesIO buffer
+#         buffer.seek(0)
+#
+#     # Create a StreamingResponse that streams the buffer content
+#         def iterfile():
+#             yield from buffer
+#
+#         # Create a StreamingResponse that streams the buffer content
+#         response = StreamingResponse(iterfile(),
+#                                      media_type='application/octet-stream')
+#         response.headers[
+#             'Content-Disposition'] = 'attachment; filename="dataframe.parquet"'
+#
+#         return response
 def check_database_update():
     """
     Check if the local database is up-to-date by comparing the entry number.
@@ -75,7 +100,7 @@ def check_database_update():
                                'Authorization': f"Bearer {API_KEY}"})
         if res.json()["total"] > 0:
             user_annots[user_id] = res.json()["total"]
-    df = pd.read_pickle(list(Path(r"./data/").glob("*database_20*"))[-1])
+    df = pd.read_pickle(list(find_data_folder().glob("*database_20*"))[-1])
     if sum(user_annots.values()) == len(df):
         print(
             f"The database size doesn't seem to have changed ({len(df)} entries).")
@@ -279,7 +304,7 @@ def generate_document(df: pd.DataFrame) -> dict:
 
 
 # function to generate the 3rd data format.
-def generate_document3(df: pd.DataFrame) -> dict:
+def generate_document3(df: pd.DataFrame) -> list:
     """
 
     :param df: This dataframe is actually a "grouped-by" dataframe,
@@ -290,25 +315,27 @@ def generate_document3(df: pd.DataFrame) -> dict:
     assert len(df['doc_id'].unique()) == 1
     assert len(df['document'].unique()) == 1
 
-    document = {
-        "ann_id": df['doc_id'].iloc[0] + "_" + df['ann_id'].iloc[0],
-        "parent_doc_id": df['doc_id'].iloc[0],
-        "document_uri": df["uri"].iloc[0],
-        "document": df['document'].iloc[0],
-        "tags": df['tags'].iloc[0],
-        "created": df['created'].iloc[0],
-        "updated": df['updated'].iloc[0],
-        "user": df["user"].iloc[0],
-        "text": df["text"].iloc[0],
-        "group": df["group"].iloc[0],
-        "permissions": df["permissions"].iloc[0],
-        "target": df["target"].iloc[0],
-        "links": df["links"].iloc[0],
-        "user_info": df["user_info"].iloc[0],
-        "flagged": df["flagged"].iloc[0],
-        "hidden": df["hidden"].iloc[0],
+    document = []
+    for i in range(len(df)):
+        document.append({
+            "ann_id": df['doc_id'].iloc[i] + "_" + df['ann_id'].iloc[i],
+            "parent_doc_id": df['doc_id'].iloc[i],
+            "document_uri": df["uri"].iloc[i],
+            "document": df['document'].iloc[i],
+            "tags": df['tags'].iloc[i],
+            "created": df['created'].iloc[i],
+            "updated": df['updated'].iloc[i],
+            "user": df["user"].iloc[i],
+            "text": df["text"].iloc[i],
+            "group": df["group"].iloc[i],
+            "permissions": df["permissions"].iloc[i],
+            "target": df["target"].iloc[i],
+            "links": df["links"].iloc[i],
+            "user_info": df["user_info"].iloc[i],
+            "flagged": df["flagged"].iloc[i],
+            "hidden": df["hidden"].iloc[i],
 
-    }
+        })
 
     return document
 
@@ -318,7 +345,7 @@ def create_and_save_document_es(dataframe):
 
     for doc_id in dataframe['doc_id'].unique():
         sub_df = dataframe.query("doc_id == @doc_id")
-        documents_es.append(generate_document3(sub_df))
+        documents_es.extend(generate_document3(sub_df))
 
     tags_to_check = ['has:date', 'has:date-approx']
     dataframe_es = pd.DataFrame(documents_es)
@@ -346,17 +373,26 @@ def data_pipeline():
     database = fetch_all_data()
     # Save the fetched database to pickle file
     now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    database_file = f"../data/hypothesis_database_{now}.pickle"
+    database_file = find_data_folder()/f"hypothesis_database_{now}.pickle"
     database.to_pickle(database_file)
     print(f"Saved latest database to {database_file}")
     database = data_cleaning(database)
     database_es = create_and_save_document_es(database)
-    database_es_file = f"../data/hypothesis_document_es_{now}.pickle"
+    database_es_file = find_data_folder()/f"hypothesis_document_es_{now}.pickle"
     print(f"Saved cleaned database to {database_es_file}")
     database_es.to_pickle(database_es_file)
 
 
-if __name__ == '__main__':
-    df = pd.read_pickle(r"../data/hypothesis_annotations_20240103_195056")
-    df = data_cleaning(df)
-    df3 = create_and_save_document_es(df)
+def find_data_folder(current_dir=Path.cwd()):
+    data = "data"
+    sub_folder = [folder for folder in current_dir.glob("*/") if
+                  folder.is_dir() and data in str(folder)]
+    if len(sub_folder) != 0:
+        return sub_folder[0]  # The data folder has been found
+
+    # Recursively move up to the parent directory and repeat the check
+    if current_dir.name == "knowledge-base":
+        print(f"There is no {data} folder in the project")
+        return None
+    parent_dir = current_dir.parent
+    return find_data_folder(parent_dir)
