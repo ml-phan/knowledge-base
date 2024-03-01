@@ -16,6 +16,7 @@ app = FastAPI()
 
 class ResponseModel(BaseModel):
     dataframe: str
+    dataframe_full: str
     hits: int
     start: int
     end: int
@@ -88,10 +89,14 @@ async def search_by_text(tag: str, term: str, start: int, num_result: int):
                                   start=start,
                                   num=num_result)
         end = hits
-    resp_df = result_format(response)
+    resp_df, resp_df_full = result_format(response)
     resp_df_json = resp_df.to_json(orient="records")
-    return ResponseModel(dataframe=resp_df_json, hits=hits,
-                         start=start, end=end)
+    resp_df_full_json = resp_df_full.to_json(orient="records")
+    return ResponseModel(dataframe=resp_df_json,
+                         dataframe_full=resp_df_full_json,
+                         hits=hits,
+                         start=start,
+                         end=end)
 
 
 @app.get("/database_exists")

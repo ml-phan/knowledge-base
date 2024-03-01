@@ -7,7 +7,7 @@ import streamlit as st
 from pathlib import Path
 
 
-# @st.cache_resource
+@st.cache_resource
 def main():
     st.write("### Current database")
 

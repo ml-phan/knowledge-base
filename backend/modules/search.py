@@ -233,12 +233,20 @@ def get_es_index_name(es):
 
 
 def result_format(response):
+    id_list = []
+    created_list = []
+    updated_list = []
+    user_list = []
     doc_list = []
     text_list = []
     uri_list = []
     tags_list = []
     date_list = []
     for item in response["hits"]["hits"]:
+        id_list.append(item["_id"])
+        created_list.append(item["_source"]["created"])
+        updated_list.append(item["_source"]["updated"])
+        user_list.append(item["_source"]["user"])
         doc_list.append(item["_source"]["document"])
         text_list.append(item["_source"]["text"])
         uri_list.append(item["_source"]["document_uri"])
@@ -252,4 +260,15 @@ def result_format(response):
                             },
                            index=range(0, len(doc_list))
                            )
-    return resp_df
+    resp_df_full = pd.DataFrame({"Document": doc_list,
+                                 "Text": text_list,
+                                 "Tags": tags_list,
+                                 "URI": uri_list,
+                                 "Date": date_list,
+                                 "Created" : created_list,
+                                 "Updated" : updated_list,
+                                 "User" : user_list
+                                 },
+                                index=range(0, len(doc_list))
+                                )
+    return resp_df, resp_df_full
